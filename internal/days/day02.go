@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-func Day02() int {
-	part1 := calculateYourScoreFromStrategy()
-	log.Printf("result: %v", part1)
-	return part1
+func Day02() (int, int) {
+	part1 := calculateScoreFromPartialStrategy()
+	part2 := calculateScoreFromCompleteStrategy()
+	return part1, part2
 }
 
 type Player struct {
@@ -22,7 +22,7 @@ type Choice struct {
 	Points int
 }
 
-func calculateYourScoreFromStrategy() int {
+func calculateScoreFromPartialStrategy() int {
 	file, err := os.Open("internal/testdata/days/day02.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -66,7 +66,76 @@ func calculateYourScoreFromStrategy() int {
 		}
 	}
 
-	log.Printf("Your final score is: %v\n", yourScore.Score)
-	log.Printf("The opponents final score is: %v\n", opponentScore.Score)
+	return yourScore.Score
+}
+
+func calculateScoreFromCompleteStrategy() int {
+	file, err := os.Open("internal/testdata/days/day02.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	var opponentOptions = make(map[string]Choice)
+	opponentOptions["A"] = Choice{Name: "Rock", Points: 1}
+	opponentOptions["B"] = Choice{Name: "Paper", Points: 2}
+	opponentOptions["C"] = Choice{Name: "Scissors", Points: 3}
+
+	var rockPaperScissorsPoints = make(map[string]int)
+	rockPaperScissorsPoints["Rock"] = 1
+	rockPaperScissorsPoints["Paper"] = 2
+	rockPaperScissorsPoints["Scissors"] = 3
+
+	var outcomeOptions = make(map[string]string)
+	outcomeOptions["X"] = "Lose"
+	outcomeOptions["Y"] = "Draw"
+	outcomeOptions["Z"] = "Win"
+
+	opponentScore := Player{Score: 0}
+	yourScore := Player{Score: 0}
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		oppsChoiceAndOutcome := strings.Split(line, " ")
+		opponentsChoice := opponentOptions[oppsChoiceAndOutcome[0]]
+		outcome := outcomeOptions[oppsChoiceAndOutcome[1]]
+
+		if outcome == "Draw" {
+			opponentScore.Score += 3 + opponentsChoice.Points
+			yourScore.Score += 3 + opponentsChoice.Points
+		}
+
+		if outcome == "Lose" {
+			if opponentsChoice.Name == "Rock" {
+				opponentScore.Score += 6 + opponentsChoice.Points
+				yourScore.Score += 0 + rockPaperScissorsPoints["Scissors"]
+			}
+			if opponentsChoice.Name == "Paper" {
+				opponentScore.Score += 6 + opponentsChoice.Points
+				yourScore.Score += 0 + rockPaperScissorsPoints["Rock"]
+			}
+			if opponentsChoice.Name == "Scissors" {
+				opponentScore.Score += 6 + opponentsChoice.Points
+				yourScore.Score += 0 + rockPaperScissorsPoints["Paper"]
+			}
+		}
+
+		if outcome == "Win" {
+			if opponentsChoice.Name == "Rock" {
+				opponentScore.Score += 0 + opponentsChoice.Points
+				yourScore.Score += 6 + rockPaperScissorsPoints["Paper"]
+			}
+			if opponentsChoice.Name == "Paper" {
+				opponentScore.Score += 0 + opponentsChoice.Points
+				yourScore.Score += 6 + rockPaperScissorsPoints["Scissors"]
+			}
+			if opponentsChoice.Name == "Scissors" {
+				opponentScore.Score += 0 + opponentsChoice.Points
+				yourScore.Score += 6 + rockPaperScissorsPoints["Rock"]
+			}
+		}
+	}
+
 	return yourScore.Score
 }
